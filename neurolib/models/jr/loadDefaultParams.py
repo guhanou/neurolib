@@ -16,18 +16,51 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     np.random.seed(seed)  # seed for RNG of noise and ICs
     params.seed = seed
 
-    params.A = 0
-    params.a = 0
-    params.B = 0
-    params.b = 0
-    params.C = 0
-    params.C1 = 0*params.C
-    params.C2 = 0*params.C
-    params.C3 = 0*params.C
-    params.C4 = 0*params.C
-    params.e0 = 0
-    params.v = 0
-    params.v0 = 0
-    params.r = 0
+    # model parameters
+    params.A = 3.25
+    params.a = 100
+    params.B = 22
+    params.b = 50
+    params.C = 135
+    params.C1 = 1*params.C
+    params.C2 = 0.8*params.C
+    params.C3 = 0.25*params.C
+    params.C4 = 0.25*params.C
+    params.e0 = 2.5
+    params.v = 6
+    params.v0 = 6
+    params.r = 0.56
 
+    # signal transmission speed between areas
+    params.signalV = 20.0
+    params.K_gl = 0.6  # global coupling strength
+    
+    # connectivity
+    if Cmat is None:
+        params.N = 1
+        params.Cmat = np.zeros((1, 1))
+        params.lengthMat = np.zeros((1, 1))
+    else:
+        params.Cmat = Cmat.copy()  # coupling matrix
+        np.fill_diagonal(params.Cmat, 0)  # no self connections
+        params.N = len(params.Cmat)  # override number of nodes
+        params.lengthMat = Dmat
+
+    # ------------------------------------------------------------------------
+
+    params.y0_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    params.y1_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    params.y2_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    params.y3_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    params.y4_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    params.y5_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    
+    # Ornstein-Uhlenbeck noise state variables
+    params.y0_ou = np.zeros((params.N,))
+    params.y1_ou = np.zeros((params.N,))
+    params.y2_ou = np.zeros((params.N,))
+    params.y3_ou = np.zeros((params.N,))
+    params.y4_ou = np.zeros((params.N,))
+    params.y5_ou = np.zeros((params.N,))
+    
     return params

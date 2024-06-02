@@ -20,8 +20,9 @@ class JRModel(Model):
 
     # because this is not a rate model, the input
 
-    def __init__(self, params=None, seed=None):
-
+    def __init__(self, params=None, Cmat=None, Dmat=None, seed=None):
+        self.Cmat = Cmat
+        self.Dmat = Dmat
         self.seed = seed
 
         # the integration function must be passed

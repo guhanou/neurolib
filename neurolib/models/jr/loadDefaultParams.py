@@ -48,6 +48,9 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
 
     # ------------------------------------------------------------------------
 
+    # external input parameters: (pulse density)
+    params.p_ext = np.random.uniform(120, 320, size=(params.N,))
+
     params.y0_init = 0.05 * np.random.uniform(0, 1, (params.N,))
     params.y1_init = 0.05 * np.random.uniform(0, 1, (params.N,))
     params.y2_init = 0.05 * np.random.uniform(0, 1, (params.N,))
@@ -62,5 +65,5 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.y3_ou = np.zeros((params.N,))
     params.y4_ou = np.zeros((params.N,))
     params.y5_ou = np.zeros((params.N,))
-    
+
     return params

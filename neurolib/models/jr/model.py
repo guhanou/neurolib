@@ -3,7 +3,7 @@ from . import timeIntegration as ti
 from ..model import Model
 
 
-class WCModel(Model):
+class JRModel(Model):
     """
     The single-column Jansen-Rit model
     """
@@ -11,12 +11,12 @@ class WCModel(Model):
     name = "jr"
     description = "Jansen-Rit model"
 
-    init_vars = []
-    state_vars = []
-    output_vars = []
-    default_output = ""
-    input_vars = []
-    default_input = ""
+    init_vars = ['y0_init', 'y1_init', 'y2_init', 'y3_init', 'y4_init', 'y5_init']
+    state_vars = ['y0', 'y1', 'y2', 'y3', 'y4', 'y5']
+    output_vars = ['y0', 'y2']
+    default_output = "y0"
+    input_vars = ['p_ext']
+    default_input = "p_ext"
 
     # because this is not a rate model, the input
 

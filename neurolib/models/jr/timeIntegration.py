@@ -1,0 +1,239 @@
+import numpy as np
+import numba
+
+from ...utils import model_utils as mu
+
+
+def timeIntegration(params):
+    """Sets up the parameters for time integration
+
+    :param params: Parameter dictionary of the model
+    :type params: dict
+    :return: Integrated activity variables of the model
+    :rtype: (numpy.ndarray,)
+    """
+    dt = params["dt"]  # Time step for the Euler intergration (ms)
+    duration = params["duration"]  # imulation duration (ms)
+    RNGseed = params["seed"]  # seed for RNG
+    
+    # ------------------------------------------------------------------------
+    # local parameters
+    A = params["A"]
+    a = params["a"]
+    B = params["B"]
+    b = params["b"]
+    C = params["C"]
+    C1 = params["C1"]
+    C2 = params["C2"]
+    C3 = params["C3"]
+    C4 = params["C4"]
+    e0 = params["e0"]
+    v = params["v"]
+    v0 = params["v0"]
+    r = params["r"]
+
+    # TODO: Ornstein-Uhlenbeck noise parameters
+
+    Cmat = params["Cmat"]
+    N = len(Cmat)  # Number of nodes
+    K_gl = params["K_gl"]  # global coupling strength
+    # Interareal connection delay
+    lengthMat = params["lengthMat"]
+    signalV = params["signalV"]
+
+    if N == 1:
+        Dmat = np.zeros((N, N))
+    else:
+        # Interareal connection delays, Dmat(i,j) Connnection from jth node to ith (ms)
+        Dmat = mu.computeDelayMatrix(lengthMat, signalV)
+        Dmat[np.eye(len(Dmat)) == 1] = np.zeros(len(Dmat))
+    Dmat_ndt = np.around(Dmat / dt).astype(int)  # delay matrix in multiples of dt
+    # ------------------------------------------------------------------------
+    # Initialization
+    # Floating point issue in np.arange() workaraound: use integers in np.arange()
+    t = np.arange(1, round(duration, 6) / dt + 1) * dt  # Time variable (ms)
+
+    sqrt_dt = np.sqrt(dt)
+
+    max_global_delay = np.max(Dmat_ndt)
+    startind = int(max_global_delay + 1)  # timestep to start integration at
+
+    # TODO: noise variable
+
+    # state variable arrays, have length of t + startind
+    # they store initial conditions AND simulated data
+    y0s = np.zeros((N, startind + len(t)))
+    y1s = np.zeros((N, startind + len(t)))
+    y2s = np.zeros((N, startind + len(t)))
+    y3s = np.zeros((N, startind + len(t)))
+    y4s = np.zeros((N, startind + len(t)))
+    y5s = np.zeros((N, startind + len(t)))
+
+    # TODO: External input param
+    p_ext = mu.adjustArrayShape(params["p_ext"], y4s)
+
+    # ------------------------------------------------------------------------
+    # Set initial values
+    # if initial values are just a Nx1 array
+    if np.shape(params["y0_init"])[1] == 1:
+        y0_init = np.dot(params["y0_init"], np.ones((1, startind)))
+        y1_init = np.dot(params["y1_init"], np.ones((1, startind)))
+        y2_init = np.dot(params["y2_init"], np.ones((1, startind)))
+        y3_init = np.dot(params["y3_init"], np.ones((1, startind)))
+        y4_init = np.dot(params["y4_init"], np.ones((1, startind)))
+        y5_init = np.dot(params["y5_init"], np.ones((1, startind)))
+    # if initial values are a Nxt array
+    else:
+        y0_init = params["y0_init"][:, -startind:]
+        y1_init = params["y1_init"][:, -startind:]
+        y2_init = params["y2_init"][:, -startind:]
+        y3_init = params["y3_init"][:, -startind:]
+        y4_init = params["y4_init"][:, -startind:]
+        y5_init = params["y5_init"][:, -startind:]
+
+    # TODO: Delayed input activity
+
+    np.random.seed(RNGseed)
+
+    # Save the noise in the activity array to save memory
+    y0s[:, startind:] = np.random.standard_normal((N, len(t)))
+    y1s[:, startind:] = np.random.standard_normal((N, len(t)))
+    y2s[:, startind:] = np.random.standard_normal((N, len(t)))
+    y3s[:, startind:] = np.random.standard_normal((N, len(t)))
+    y4s[:, startind:] = np.random.standard_normal((N, len(t)))
+    y5s[:, startind:] = np.random.standard_normal((N, len(t)))
+
+    y0s[:, :startind] = y0_init
+    y1s[:, :startind] = y1_init
+    y2s[:, :startind] = y2_init
+    y3s[:, :startind] = y3_init
+    y4s[:, :startind] = y4_init
+    y5s[:, :startind] = y5_init
+    
+    # TODO: noise parameter
+
+    return timeIntegration_njit_elementwise(
+        startind,
+        t,
+        dt,
+        sqrt_dt,
+        N,
+        Cmat,
+        K_gl,
+        Dmat_ndt,
+        y0s,
+        y1s,
+        y2s,
+        y3s,
+        y4s,
+        y5s,
+        p_ext,
+        a,
+        A,
+        b,
+        B,
+        C,
+        C1,
+        C2,
+        C3,
+        C4,
+        e0,
+        v,
+        v0,
+        r
+        # TODO: noise params
+    )
+
+@numba.njit
+def timeIntegration_njit_elementwise(
+    startind,
+    t,
+    dt,
+    sqrt_dt,
+    N,
+    Cmat,
+    K_gl,
+    Dmat_ndt,
+    y0s,
+    y1s,
+    y2s,
+    y3s,
+    y4s,
+    y5s,
+    p_ext,
+    a,
+    A,
+    b,
+    B,
+    C,
+    C1,
+    C2,
+    C3,
+    C4,
+    e0,
+    v0,
+    r
+):
+    
+    def Sigm(v):
+        return 2 * e0 / (1 + np.exp(r(v0 - v)))
+    
+    for i in range(startind, startind + len(t)):
+        # loop through all the nodes
+        for no in range(N):
+            # TODO: include noise
+
+            # TODO: delayed input
+
+            # Jansen-Rit model
+            # Implmentation without consideration of possible tau-values
+            y0_rhs = (
+                y3s[no, i - 1]
+            )
+            y1_rhs = (
+                y4s[no, i - 1]
+            )
+            y2_rhs = (
+                y5s[no, i - 1]
+            )
+            y3_rhs = (
+                A * a * Sigm(y1s[no, i - 1] - y2s[no, i - 1])
+                - (2 * a * y3s[no, i - 1])
+                - (a * a * y0s[no, i - 1])
+            )
+            y4_rhs = (
+                A * a * (p_ext + C2 * Sigm(C1 * y0s[no, i - 1]))
+                - (2 * a * y4s[no, i - 1])
+                - (a * a * y1s[no, i - 1])
+            )
+            y5_rhs = (
+                B * b * (C4 * Sigm(C3 * y0s[no, i - 1]))
+                - (2 * b * y5s[no, i - 1])
+                - (b * b * y2s[no, i - 1])
+            )
+
+            # Euler integration
+            y0s[no, i] = y0s[no, i - 1] + dt * y0_rhs
+            y1s[no, i] = y1s[no, i - 1] + dt * y1_rhs
+            y2s[no, i] = y2s[no, i - 1] + dt * y2_rhs
+            y3s[no, i] = y3s[no, i - 1] + dt * y3_rhs
+            y4s[no, i] = y4s[no, i - 1] + dt * y4_rhs
+            y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
+
+            # make sure state variables do not exceed 1 (can only happen with noise)
+            def preventExceed(x): 
+                if x > 1.0:
+                    x = 1.0
+                if x < 0.0:
+                    x = 0.0
+
+            y0s[no, i] = preventExceed(y0s[no, i])
+            y1s[no, i] = preventExceed(y1s[no, i])
+            y2s[no, i] = preventExceed(y2s[no, i])
+            y3s[no, i] = preventExceed(y3s[no, i])
+            y4s[no, i] = preventExceed(y4s[no, i])
+            y5s[no, i] = preventExceed(y5s[no, i])
+
+            # TODO: Ornstein-Uhlenbeck process
+
+    return t, y0s, y1s, y2s, y3s, y4s, y5s # TODO: OU values

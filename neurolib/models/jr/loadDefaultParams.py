@@ -27,7 +27,6 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.C3 = 0.25*params.C
     params.C4 = 0.25*params.C
     params.e0 = 2.5
-    params.v = 6
     params.v0 = 6
     params.r = 0.56
 

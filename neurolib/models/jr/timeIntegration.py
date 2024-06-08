@@ -174,7 +174,7 @@ def timeIntegration_njit_elementwise(
 ):
     
     def Sigm(v):
-        return 2.0 * e0 / (1.0 + np.exp(r(v0 - v)))
+        return 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
     
     for i in range(startind, startind + len(t)):
         # loop through all the nodes
@@ -196,17 +196,17 @@ def timeIntegration_njit_elementwise(
             )
             y3_rhs = (
                 A * a * Sigm(y1s[no, i - 1] - y2s[no, i - 1])
-                - (2 * a * y3s[no, i - 1])
+                - (2.0 * a * y3s[no, i - 1])
                 - (a * a * y0s[no, i - 1])
             )
             y4_rhs = (
                 A * a * (p_ext + C2 * Sigm(C1 * y0s[no, i - 1]))
-                - (2 * a * y4s[no, i - 1])
+                - (2.0 * a * y4s[no, i - 1])
                 - (a * a * y1s[no, i - 1])
             )
             y5_rhs = (
                 B * b * (C4 * Sigm(C3 * y0s[no, i - 1]))
-                - (2 * b * y5s[no, i - 1])
+                - (2.0 * b * y5s[no, i - 1])
                 - (b * b * y2s[no, i - 1])
             )
 

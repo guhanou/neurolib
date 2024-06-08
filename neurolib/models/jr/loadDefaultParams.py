@@ -18,16 +18,16 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
 
     # model parameters
     params.A = 3.25
-    params.a = 100
-    params.B = 22
-    params.b = 50
-    params.C = 135
+    params.a = 100.0
+    params.B = 22.0
+    params.b = 50.0
+    params.C = 135.0
     params.C1 = 1*params.C
     params.C2 = 0.8*params.C
     params.C3 = 0.25*params.C
     params.C4 = 0.25*params.C
     params.e0 = 2.5
-    params.v0 = 6
+    params.v0 = 6.0
     params.r = 0.56
 
     # signal transmission speed between areas
@@ -48,14 +48,14 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     # ------------------------------------------------------------------------
 
     # external input parameters: (pulse density)
-    params.p_ext = np.random.uniform(120, 320, size=(params.N,))
+    params.p_ext = np.random.uniform(120, 320, size=(params.N, 1))
 
-    params.y0_init = 0.05 * np.random.uniform(0, 1, (params.N,))
-    params.y1_init = 0.05 * np.random.uniform(0, 1, (params.N,))
-    params.y2_init = 0.05 * np.random.uniform(0, 1, (params.N,))
-    params.y3_init = 0.05 * np.random.uniform(0, 1, (params.N,))
-    params.y4_init = 0.05 * np.random.uniform(0, 1, (params.N,))
-    params.y5_init = 0.05 * np.random.uniform(0, 1, (params.N,))
+    params.y0_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
+    params.y1_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
+    params.y2_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
+    params.y3_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
+    params.y4_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
+    params.y5_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
     
     # Ornstein-Uhlenbeck noise state variables
     """

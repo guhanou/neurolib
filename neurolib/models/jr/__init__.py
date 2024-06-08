@@ -1,1 +1,1 @@
-from .model import JansenRitModel
+from .model import JRModel

@@ -28,7 +28,6 @@ def timeIntegration(params):
     C3 = params["C3"]
     C4 = params["C4"]
     e0 = params["e0"]
-    v = params["v"]
     v0 = params["v0"]
     r = params["r"]
 
@@ -138,7 +137,6 @@ def timeIntegration(params):
         C3,
         C4,
         e0,
-        v,
         v0,
         r
         # TODO: noise params
@@ -176,7 +174,7 @@ def timeIntegration_njit_elementwise(
 ):
     
     def Sigm(v):
-        return 2 * e0 / (1 + np.exp(r(v0 - v)))
+        return 2.0 * e0 / (1.0 + np.exp(r(v0 - v)))
     
     for i in range(startind, startind + len(t)):
         # loop through all the nodes

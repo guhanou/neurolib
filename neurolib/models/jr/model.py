@@ -11,8 +11,8 @@ class JRModel(Model):
     name = "jr"
     description = "Jansen-Rit model"
 
-    init_vars = ['y0_init', 'y1_init', 'y2_init', 'y3_init', 'y4_init', 'y5_init', 'y0_ou', 'y1_ou', 'y2_ou', 'y3_ou', 'y4_ou', 'y5_ou']
-    state_vars = ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'y0_ou', 'y1_ou', 'y2_ou', 'y3_ou', 'y4_ou', 'y5_ou']
+    init_vars = ['y0_init', 'y1_init', 'y2_init', 'y3_init', 'y4_init', 'y5_init']
+    state_vars = ['y0', 'y1', 'y2', 'y3', 'y4', 'y5']
     output_vars = ['y0','y1', 'y2']
     default_output = "y0"
     input_vars = ['p_ext']

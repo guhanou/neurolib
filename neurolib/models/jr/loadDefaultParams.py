@@ -59,11 +59,12 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.y5_init = 0.05 * np.random.uniform(0, 1, (params.N,))
     
     # Ornstein-Uhlenbeck noise state variables
+    """
     params.y0_ou = np.zeros((params.N,))
     params.y1_ou = np.zeros((params.N,))
     params.y2_ou = np.zeros((params.N,))
     params.y3_ou = np.zeros((params.N,))
     params.y4_ou = np.zeros((params.N,))
     params.y5_ou = np.zeros((params.N,))
-
+    """
     return params

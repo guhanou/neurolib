@@ -174,7 +174,8 @@ def timeIntegration_njit_elementwise(
 ):
     
     def Sigm(v):
-        return 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
+        x = 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
+        return x
     
     for i in range(startind, startind + len(t)):
         # loop through all the nodes
@@ -199,8 +200,9 @@ def timeIntegration_njit_elementwise(
                 - (2.0 * a * y3s[no, i - 1])
                 - (a * a * y0s[no, i - 1])
             )
+            
             y4_rhs = (
-                A * a * (p_ext + C2 * Sigm(C1 * y0s[no, i - 1]))
+                A * a * (p_ext[no, i - 1] + C2 * Sigm(C1 * y0s[no, i - 1]))
                 - (2.0 * a * y4s[no, i - 1])
                 - (a * a * y1s[no, i - 1])
             )
@@ -218,12 +220,14 @@ def timeIntegration_njit_elementwise(
             y4s[no, i] = y4s[no, i - 1] + dt * y4_rhs
             y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
 
+            """
             # make sure state variables do not exceed 1 (can only happen with noise)
             def preventExceed(x): 
                 if x > 1.0:
                     x = 1.0
-                if x < 0.0:
+                elif x < 0.0:
                     x = 0.0
+                return x
 
             y0s[no, i] = preventExceed(y0s[no, i])
             y1s[no, i] = preventExceed(y1s[no, i])
@@ -231,6 +235,7 @@ def timeIntegration_njit_elementwise(
             y3s[no, i] = preventExceed(y3s[no, i])
             y4s[no, i] = preventExceed(y4s[no, i])
             y5s[no, i] = preventExceed(y5s[no, i])
+            """
 
             # TODO: Ornstein-Uhlenbeck process
 

@@ -18,9 +18,9 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
 
     # model parameters
     params.A = 3.25
-    params.a = 100.0
+    params.a = 1.0/100.0
     params.B = 22.0
-    params.b = 50.0
+    params.b = 1.0/50.0
     params.C = 135.0
     params.C1 = 1*params.C
     params.C2 = 0.8*params.C

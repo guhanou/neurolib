@@ -239,4 +239,4 @@ def timeIntegration_njit_elementwise(
 
             # TODO: Ornstein-Uhlenbeck process
 
-    return t, y0s, y1s, y2s, y3s, y4s, y5s # TODO: OU values
+    return t, y0s, y1s, y2s # TODO: OU values

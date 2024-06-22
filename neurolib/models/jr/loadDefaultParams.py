@@ -18,15 +18,15 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
 
     # model parameters
     params.A = 3.25 #mV
-    params.a = 100.0 #s^-1
+    params.a = 0.1 #kHz
     params.B = 22.0 #mV
-    params.b = 50.0 #s^-1
+    params.b = 0.05 #kHz
     params.C = 135.0
     params.C1 = 1*params.C
     params.C2 = 0.8*params.C
     params.C3 = 0.25*params.C
     params.C4 = 0.25*params.C
-    params.e0 = 2.5 #s^-1
+    params.e0 = 0.0025 #kHz
     params.v0 = 6.0 #mV
     params.r = 0.56 #mV^-1
 

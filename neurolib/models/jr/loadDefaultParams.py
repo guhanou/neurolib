@@ -17,18 +17,18 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.seed = seed
 
     # model parameters
-    params.A = 3.25
-    params.a = 1.0/100.0
-    params.B = 22.0
-    params.b = 1.0/50.0
+    params.A = 3.25 #mV
+    params.a = 100.0 #s^-1
+    params.B = 22.0 #mV
+    params.b = 50.0 #s^-1
     params.C = 135.0
     params.C1 = 1*params.C
     params.C2 = 0.8*params.C
     params.C3 = 0.25*params.C
     params.C4 = 0.25*params.C
-    params.e0 = 2.5
-    params.v0 = 6.0
-    params.r = 0.56
+    params.e0 = 2.5 #s^-1
+    params.v0 = 6.0 #mV
+    params.r = 0.56 #mV^-1
 
     # signal transmission speed between areas
     params.signalV = 20.0

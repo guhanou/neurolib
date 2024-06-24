@@ -254,22 +254,22 @@ def timeIntegration_njit_elementwise(
             y4s[no, i] = y4s[no, i - 1] + dt * y4_rhs
             y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
 
-            """
-            # make sure state variables do not exceed 1 (can only happen with noise)
+            
+            # # make sure state variables do not exceed 1 (can only happen with noise)
             def preventExceed(x): 
-                if x > 1.0:
-                    x = 1.0
-                elif x < 0.0:
+                # if x > 1.0:
+                #     x = 1.0
+                if x < 0.0:
                     x = 0.0
                 return x
 
             y0s[no, i] = preventExceed(y0s[no, i])
             y1s[no, i] = preventExceed(y1s[no, i])
             y2s[no, i] = preventExceed(y2s[no, i])
-            y3s[no, i] = preventExceed(y3s[no, i])
-            y4s[no, i] = preventExceed(y4s[no, i])
-            y5s[no, i] = preventExceed(y5s[no, i])
-            """
+            # y3s[no, i] = preventExceed(y3s[no, i])
+            # y4s[no, i] = preventExceed(y4s[no, i])
+            # y5s[no, i] = preventExceed(y5s[no, i])
+            
 
             # Ornstein-Uhlenbeck process
             exc_ou[no] = (

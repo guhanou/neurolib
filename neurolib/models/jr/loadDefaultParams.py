@@ -19,11 +19,13 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     # external input parameters:
     params.tau_ou = 5.0  # ms Timescale of the Ornstein-Uhlenbeck noise process
     params.sigma_ou = 0.0  # noise intensity
-    params.exc_ou_mean = 0.0  # OU process mean
-    params.inh_ou_mean = 0.0  # OU process mean
+    params.y3_ou_mean = 0.0  # OU process mean
+    params.y4_ou_mean = 0.0  # OU process mean
+    params.y5_ou_mean = 0.0  # OU process mean
 
-    params.tau_exc = 10.0  # excitatory time constant
-    params.tau_inh = 20.0  # inhibitory time constant
+    params.tau_y3 = 10.0  # y3 time constant
+    params.tau_y4 = 10.0  # y4 time constant
+    params.tau_y5 = 20.0  # y5 time constant
 
     # model parameters
     params.A = 3.25 #mV
@@ -37,7 +39,7 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.C4 = 0.25*params.C
     params.e0 = 0.0025 #kHz
     params.v0 = 6.0 #mV
-    params.r = 0.56 #mV^-1
+    params.r = 0.56 #mV
 
     # signal transmission speed between areas
     params.signalV = 20.0
@@ -58,8 +60,8 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
 
     # external input parameters: (pulse density)
     params.p_ext_static = np.full(shape=(params.N, 1), fill_value=0.22) #baseline external input
-    params.p_ext_variation = np.random.uniform(-0.1, 0.1, (params.N, 1)) #random variation in external input
-    # params.p_ext = np.add(params.p_ext_static, params.p_ext_variation)
+    params.p_ext = np.random.uniform(-0.1, 0.1, (params.N, 1)) #random variation in external input
+    # params.p_ext = np.add(params.p_ext_static, params.p_ext)
 
     params.y0_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
     params.y1_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
@@ -69,8 +71,8 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.y5_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
     
     # Ornstein-Uhlenbeck noise state variables
-
-    params.exc_ou = np.zeros((params.N,))
-    params.inh_ou = np.zeros((params.N,))
+    params.y3_ou = np.zeros((params.N,))
+    params.y4_ou = np.zeros((params.N,))
+    params.y5_ou = np.zeros((params.N,))
   
     return params

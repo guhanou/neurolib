@@ -11,12 +11,12 @@ class JRModel(Model):
     name = "jr"
     description = "Jansen-Rit model"
 
-    init_vars = ['y0_init', 'y1_init', 'y2_init', 'y3_init', 'y4_init', 'y5_init', "exc_ou", "inh_ou"]
-    state_vars = ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', "exc_ou", "inh_ou"]
+    init_vars = ['y0_init', 'y1_init', 'y2_init', 'y3_init', 'y4_init', 'y5_init', "y3_ou", "y4_ou", "y5_ou"]
+    state_vars = ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', "y3_ou", "y4_ou", "y5_ou"]
     output_vars = ['y0','y1', 'y2']
     default_output = "y0"
-    input_vars = ['p_ext_variation']
-    default_input = "p_ext_variation"
+    input_vars = ['p_ext']
+    default_input = "p_ext"
 
 
     def __init__(self, params=None, Cmat=None, Dmat=None, seed=None):
@@ -29,7 +29,7 @@ class JRModel(Model):
 
         # load default parameters if none were given
         if params is None:
-            params = dp.loadDefaultParams(seed=self.seed)
+            params = dp.loadDefaultParams(Cmat=self.Cmat, Dmat=self.Dmat, seed=self.seed)
 
         # Initialize base class Model
         super().__init__(integration=integration, params=params)

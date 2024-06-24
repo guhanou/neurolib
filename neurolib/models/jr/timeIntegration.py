@@ -30,8 +30,9 @@ def timeIntegration(params):
     e0 = params["e0"]
     v0 = params["v0"]
     r = params["r"]
-    tau_exc = params["tau_exc"]  
-    tau_inh = params["tau_inh"]  
+    tau_y3 = params["tau_y3"]
+    tau_y4 = params["tau_y4"]  
+    tau_y5 = params["tau_y5"]  
 
     # external input parameters:
     # Parameter of the Ornstein-Uhlenbeck process for the external input(ms)
@@ -39,9 +40,11 @@ def timeIntegration(params):
     # Parameter of the Ornstein-Uhlenbeck (OU) process for the external input ( mV/ms/sqrt(ms) )
     sigma_ou = params["sigma_ou"]
     # Mean external excitatory input (OU process)
-    exc_ou_mean = params["exc_ou_mean"]
+    y3_ou_mean = params["y3_ou_mean"]
+    # Mean external excitatory input (OU process)
+    y4_ou_mean = params["y4_ou_mean"]
     # Mean external inhibitory input (OU process)
-    inh_ou_mean = params["inh_ou_mean"]
+    y5_ou_mean = params["y5_ou_mean"]
 
     Cmat = params["Cmat"]
     N = len(Cmat)  # Number of nodes
@@ -68,8 +71,9 @@ def timeIntegration(params):
     startind = int(max_global_delay + 1)  # timestep to start integration at
 
     # noise variable
-    exc_ou = params["exc_ou"].copy()
-    inh_ou = params["inh_ou"].copy()
+    y3_ou = params["y3_ou"].copy()
+    y4_ou = params["y4_ou"].copy()
+    y5_ou = params["y5_ou"].copy()
 
     # state variable arrays, have length of t + startind
     # they store initial conditions AND simulated data
@@ -82,7 +86,7 @@ def timeIntegration(params):
 
     # External input param
     p_ext_static = mu.adjustArrayShape(params["p_ext_static"], y4s)
-    p_ext_variation = mu.adjustArrayShape(params["p_ext_variation"], y4s)
+    p_ext = mu.adjustArrayShape(params["p_ext"], y4s)
 
     # ------------------------------------------------------------------------
     # Set initial values
@@ -103,7 +107,8 @@ def timeIntegration(params):
         y4_init = params["y4_init"][:, -startind:]
         y5_init = params["y5_init"][:, -startind:]
 
-    # TODO: Delayed input activity
+    # Delyed input
+    exc_input_d = np.zeros(N)  # delayed input to exc
 
     np.random.seed(RNGseed)
 
@@ -118,8 +123,9 @@ def timeIntegration(params):
     y4s[:, :startind] = y4_init
     y5s[:, :startind] = y5_init
     
-    noise_exc = np.zeros((N,))
-    noise_inh = np.zeros((N,))
+    noise_y3 = np.zeros((N,))
+    noise_y4 = np.zeros((N,))
+    noise_y5 = np.zeros((N,))
 
     return timeIntegration_njit_elementwise(
         startind,
@@ -137,7 +143,7 @@ def timeIntegration(params):
         y4s,
         y5s,
         p_ext_static,
-        p_ext_variation,
+        p_ext,
         a,
         A,
         b,
@@ -150,16 +156,21 @@ def timeIntegration(params):
         e0,
         v0,
         r,
-        noise_exc,
-        noise_inh,
-        tau_exc,
-        tau_inh,
-        exc_ou,
-        inh_ou,
+        noise_y3,
+        noise_y4,
+        noise_y5,
+        tau_y3,
+        tau_y4,
+        tau_y5,
+        y3_ou,
+        y4_ou,
+        y5_ou,
         tau_ou,
         sigma_ou,
-        exc_ou_mean,
-        inh_ou_mean,
+        y3_ou_mean,
+        y4_ou_mean,
+        y5_ou_mean,
+        exc_input_d,
     )
 
 @numba.njit
@@ -179,7 +190,7 @@ def timeIntegration_njit_elementwise(
     y4s,
     y5s,
     p_ext_static,
-    p_ext_variation,
+    p_ext,
     a,
     A,
     b,
@@ -192,29 +203,46 @@ def timeIntegration_njit_elementwise(
     e0,
     v0,
     r,
-    noise_exc,
-    noise_inh,
-    tau_exc,
-    tau_inh,
-    exc_ou,
-    inh_ou,
+    noise_y3,
+    noise_y4,
+    noise_y5,
+    tau_y3,    
+    tau_y4,
+    tau_y5,
+    y3_ou,
+    y4_ou,
+    y5_ou,
     tau_ou,
     sigma_ou,
-    exc_ou_mean,
-    inh_ou_mean,
+    y3_ou_mean,
+    y4_ou_mean,
+    y5_ou_mean,
+    exc_input_d,
 ):
     
     def Sigm(v):
         x = 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
         return x
     
+    # make sure state variables do not exceed 1 (can only happen with noise)
+    def preventExceed(x): 
+        if x < 0.0:
+            x = 0.0    
+        return x
+
     for i in range(startind, startind + len(t)):
         # loop through all the nodes
         for no in range(N):
-            noise_exc[no] = y4s[no, i]
-            noise_inh[no] = y5s[no, i]
+            noise_y3[no] = y3s[no, i]
+            noise_y4[no] = y4s[no, i]
+            noise_y5[no] = y5s[no, i]
 
-            # TODO: delayed input -> not applicable for Jansen-Rit model?
+            # delayed input to each node
+            exc_input_d[no] = 0
+
+            for l in range(N):
+                exc_input_d[no] += K_gl * Cmat[no, l] * (y4s[l, i - Dmat_ndt[no, l] - 1])
+
 
             # Jansen-Rit model
             # Implmentation without consideration of possible tau-values
@@ -227,23 +255,24 @@ def timeIntegration_njit_elementwise(
             y2_rhs = (
                 y5s[no, i - 1]
             )
-            y3_rhs = (
+            y3_rhs = 1/tau_y3 * (
                 A * a * Sigm(y1s[no, i - 1] - y2s[no, i - 1])
                 - (2.0 * a * y3s[no, i - 1])
                 - (a * a * y0s[no, i - 1])
+                + y3_ou[no]  # ou noise
             )
             
-            y4_rhs = 1/tau_exc * (
-                A * a * (p_ext_static[no, i - 1] + p_ext_variation[no, i - 1] + C2 * Sigm(C1 * y0s[no, i - 1]))
+            y4_rhs = 1/tau_y4 * (
+                A * a * (p_ext_static[no, i - 1] + p_ext[no, i - 1] + C2 * Sigm(C1 * y0s[no, i - 1]))
                 - (2.0 * a * y4s[no, i - 1])
                 - (a * a * y1s[no, i - 1])
-                + exc_ou[no]  # ou noise
+                + y4_ou[no]  # ou noise
             )
-            y5_rhs = 1/tau_inh * (
+            y5_rhs = 1/tau_y5 * (
                 B * b * (C4 * Sigm(C3 * y0s[no, i - 1]))
                 - (2.0 * b * y5s[no, i - 1])
                 - (b * b * y2s[no, i - 1])
-                + inh_ou[no]  # ou noise
+                + y5_ou[no]  # ou noise
             )
 
             # Euler integration
@@ -255,13 +284,7 @@ def timeIntegration_njit_elementwise(
             y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
 
             
-            # # make sure state variables do not exceed 1 (can only happen with noise)
-            def preventExceed(x): 
-                # if x > 1.0:
-                #     x = 1.0
-                if x < 0.0:
-                    x = 0.0
-                return x
+            
 
             y0s[no, i] = preventExceed(y0s[no, i])
             y1s[no, i] = preventExceed(y1s[no, i])
@@ -272,11 +295,14 @@ def timeIntegration_njit_elementwise(
             
 
             # Ornstein-Uhlenbeck process
-            exc_ou[no] = (
-                exc_ou[no] + (exc_ou_mean - exc_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_exc[no]
+            y3_ou[no] = (
+                y3_ou[no] + (y3_ou_mean - y3_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_y3[no]
+            )
+            y4_ou[no] = (
+                y4_ou[no] + (y4_ou_mean - y4_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_y4[no]
             )  # mV/ms
-            inh_ou[no] = (
-                inh_ou[no] + (inh_ou_mean - inh_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_inh[no]
+            y5_ou[no] = (
+                y5_ou[no] + (y5_ou_mean - y5_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_y5[no]
             )  # mV/ms
 
-    return t, y0s, y1s, y2s, exc_ou, inh_ou
+    return t, y0s, y1s, y2s, y3s, y4s, y5s, y3_ou, y4_ou, y5_ou

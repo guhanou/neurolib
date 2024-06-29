@@ -6,6 +6,8 @@ from ..model import Model
 class JRModel(Model):
     """
     The single-column Jansen-Rit model
+
+    Based on: Jansen, B.H., Rit, V.G. Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns. Biol. Cybern. 73, 357–366 (1995).
     """
 
     name = "jr"

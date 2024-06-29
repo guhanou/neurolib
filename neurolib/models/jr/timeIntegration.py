@@ -107,8 +107,8 @@ def timeIntegration(params):
         y4_init = params["y4_init"][:, -startind:]
         y5_init = params["y5_init"][:, -startind:]
 
-    # Delyed input
-    exc_input_d = np.zeros(N)  # delayed input to exc
+    # Delayed input
+    y4_input_d = np.zeros(N)  # delayed input to exc
 
     np.random.seed(RNGseed)
 
@@ -170,7 +170,7 @@ def timeIntegration(params):
         y3_ou_mean,
         y4_ou_mean,
         y5_ou_mean,
-        exc_input_d,
+        y4_input_d,
     )
 
 @numba.njit
@@ -217,17 +217,17 @@ def timeIntegration_njit_elementwise(
     y3_ou_mean,
     y4_ou_mean,
     y5_ou_mean,
-    exc_input_d,
+    y4_input_d,
 ):
     
     def Sigm(v):
         x = 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
         return x
     
-    # make sure state variables do not exceed 1 (can only happen with noise)
+    # make sure state variables do not fall below 0
     def preventExceed(x): 
         if x < 0.0:
-            x = 0.0    
+            x = 0.0
         return x
 
     for i in range(startind, startind + len(t)):
@@ -238,11 +238,10 @@ def timeIntegration_njit_elementwise(
             noise_y5[no] = y5s[no, i]
 
             # delayed input to each node
-            exc_input_d[no] = 0
+            y4_input_d[no] = 0
 
             for l in range(N):
-                exc_input_d[no] += K_gl * Cmat[no, l] * (y4s[l, i - Dmat_ndt[no, l] - 1])
-
+                y4_input_d[no] += K_gl * Cmat[no, l] * (y0s[l, i - Dmat_ndt[no, l] - 1]) # TODO: use y0, y1 or y4 as input?
 
             # Jansen-Rit model
             # Implmentation without consideration of possible tau-values
@@ -263,7 +262,7 @@ def timeIntegration_njit_elementwise(
             )
             
             y4_rhs = 1/tau_y4 * (
-                A * a * (p_ext_static[no, i - 1] + p_ext[no, i - 1] + C2 * Sigm(C1 * y0s[no, i - 1]))
+                A * a * (p_ext_static[no, i - 1] + p_ext[no, i - 1] + y4_input_d[no] + C2 * Sigm(C1 * y0s[no, i - 1]))
                 - (2.0 * a * y4s[no, i - 1])
                 - (a * a * y1s[no, i - 1])
                 + y4_ou[no]  # ou noise
@@ -282,9 +281,6 @@ def timeIntegration_njit_elementwise(
             y3s[no, i] = y3s[no, i - 1] + dt * y3_rhs
             y4s[no, i] = y4s[no, i - 1] + dt * y4_rhs
             y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
-
-            
-            
 
             y0s[no, i] = preventExceed(y0s[no, i])
             y1s[no, i] = preventExceed(y1s[no, i])

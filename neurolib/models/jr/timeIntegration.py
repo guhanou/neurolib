@@ -46,6 +46,11 @@ def timeIntegration(params):
     # Mean external inhibitory input (OU process)
     y5_ou_mean = params["y5_ou_mean"]
 
+    # ------------------------------------------------------------------------
+    # global coupling parameters
+
+    # Connectivity matrix
+    # Interareal relative coupling strengths (values between 0 and 1), Cmat(i,j) connection from jth to ith
     Cmat = params["Cmat"]
     N = len(Cmat)  # Number of nodes
     K_gl = params["K_gl"]  # global coupling strength
@@ -60,6 +65,7 @@ def timeIntegration(params):
         Dmat = mu.computeDelayMatrix(lengthMat, signalV)
         Dmat[np.eye(len(Dmat)) == 1] = np.zeros(len(Dmat))
     Dmat_ndt = np.around(Dmat / dt).astype(int)  # delay matrix in multiples of dt
+    
     # ------------------------------------------------------------------------
     # Initialization
     # Floating point issue in np.arange() workaraound: use integers in np.arange()
@@ -85,8 +91,8 @@ def timeIntegration(params):
     y5s = np.zeros((N, startind + len(t)))
 
     # External input param
-    p_ext_static = mu.adjustArrayShape(params["p_ext_static"], y4s)
-    p_ext = mu.adjustArrayShape(params["p_ext"], y4s)
+    ext_input_static = mu.adjustArrayShape(params["ext_input_static"], y4s)
+    ext_input = mu.adjustArrayShape(params["ext_input"], y4s)
 
     # ------------------------------------------------------------------------
     # Set initial values
@@ -127,6 +133,8 @@ def timeIntegration(params):
     noise_y4 = np.zeros((N,))
     noise_y5 = np.zeros((N,))
 
+    # ------------------------------------------------------------------------
+    
     return timeIntegration_njit_elementwise(
         startind,
         t,
@@ -142,8 +150,8 @@ def timeIntegration(params):
         y3s,
         y4s,
         y5s,
-        p_ext_static,
-        p_ext,
+        ext_input_static,
+        ext_input,
         a,
         A,
         b,
@@ -189,8 +197,8 @@ def timeIntegration_njit_elementwise(
     y3s,
     y4s,
     y5s,
-    p_ext_static,
-    p_ext,
+    ext_input_static,
+    ext_input,
     a,
     A,
     b,
@@ -219,13 +227,13 @@ def timeIntegration_njit_elementwise(
     y5_ou_mean,
     y4_input_d,
 ):
-    
+    # Computes the firing rate based on the postsynaptic potential using a sigmoid function
     def Sigm(v):
         x = 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
         return x
     
     # make sure state variables do not fall below 0
-    def preventExceed(x): 
+    def preventUndershoot(x): 
         if x < 0.0:
             x = 0.0
         return x
@@ -244,7 +252,6 @@ def timeIntegration_njit_elementwise(
                 y4_input_d[no] += K_gl * Cmat[no, l] * (y0s[l, i - Dmat_ndt[no, l] - 1]) # TODO: use y0, y1 or y4 as input?
 
             # Jansen-Rit model
-            # Implmentation without consideration of possible tau-values
             y0_rhs = (
                 y3s[no, i - 1]
             )
@@ -260,9 +267,8 @@ def timeIntegration_njit_elementwise(
                 - (a * a * y0s[no, i - 1])
                 + y3_ou[no]  # ou noise
             )
-            
             y4_rhs = 1/tau_y4 * (
-                A * a * (p_ext_static[no, i - 1] + p_ext[no, i - 1] + y4_input_d[no] + C2 * Sigm(C1 * y0s[no, i - 1]))
+                A * a * (ext_input_static[no, i - 1] + ext_input[no, i - 1] + y4_input_d[no] + C2 * Sigm(C1 * y0s[no, i - 1]))
                 - (2.0 * a * y4s[no, i - 1])
                 - (a * a * y1s[no, i - 1])
                 + y4_ou[no]  # ou noise
@@ -282,23 +288,19 @@ def timeIntegration_njit_elementwise(
             y4s[no, i] = y4s[no, i - 1] + dt * y4_rhs
             y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
 
-            y0s[no, i] = preventExceed(y0s[no, i])
-            y1s[no, i] = preventExceed(y1s[no, i])
-            y2s[no, i] = preventExceed(y2s[no, i])
-            # y3s[no, i] = preventExceed(y3s[no, i])
-            # y4s[no, i] = preventExceed(y4s[no, i])
-            # y5s[no, i] = preventExceed(y5s[no, i])
+            y0s[no, i] = preventUndershoot(y0s[no, i])
+            y1s[no, i] = preventUndershoot(y1s[no, i])
+            y2s[no, i] = preventUndershoot(y2s[no, i])
             
-
             # Ornstein-Uhlenbeck process
             y3_ou[no] = (
                 y3_ou[no] + (y3_ou_mean - y3_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_y3[no]
-            )
+            ) # mV/ms
             y4_ou[no] = (
                 y4_ou[no] + (y4_ou_mean - y4_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_y4[no]
-            )  # mV/ms
+            ) # mV/ms
             y5_ou[no] = (
                 y5_ou[no] + (y5_ou_mean - y5_ou[no]) * dt / tau_ou + sigma_ou * sqrt_dt * noise_y5[no]
-            )  # mV/ms
+            ) # mV/ms
 
     return t, y0s, y1s, y2s, y3s, y4s, y5s, y3_ou, y4_ou, y5_ou

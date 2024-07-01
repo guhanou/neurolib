@@ -9,7 +9,6 @@ class JRModel(Model):
 
     Based on: Jansen, B.H., Rit, V.G. Electroencephalogram and visual evoked potential generation in a mathematical model of coupled cortical columns. Biol. Cybern. 73, 357–366 (1995).
     """
-
     name = "jr"
     description = "Jansen-Rit model"
 
@@ -17,9 +16,8 @@ class JRModel(Model):
     state_vars = ['y0', 'y1', 'y2', 'y3', 'y4', 'y5', "y3_ou", "y4_ou", "y5_ou"]
     output_vars = ['y0','y1', 'y2']
     default_output = "y0"
-    input_vars = ['p_ext']
-    default_input = "p_ext"
-
+    input_vars = ['ext_input']
+    default_input = "ext_input"
 
     def __init__(self, params=None, Cmat=None, Dmat=None, seed=None):
         self.Cmat = Cmat

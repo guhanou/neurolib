@@ -28,22 +28,23 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     params.tau_y5 = 20.0  # y5 time constant
 
     # model parameters
-    params.A = 3.25 #mV
-    params.a = 0.1 #kHz
-    params.B = 22.0 #mV
-    params.b = 0.05 #kHz
-    params.C = 135.0
+    params.A = 3.25 # mV
+    params.a = 0.1 # kHz
+    params.B = 22.0 # mV
+    params.b = 0.05 # kHz
+    params.C = 135.0 # constant
     params.C1 = 1*params.C
     params.C2 = 0.8*params.C
     params.C3 = 0.25*params.C
     params.C4 = 0.25*params.C
-    params.e0 = 0.0025 #kHz
-    params.v0 = 6.0 #mV
-    params.r = 0.56 #mV
+    params.e0 = 0.0025 # kHz
+    params.v0 = 6.0 # mV
+    params.r = 0.56 # mV
 
     # signal transmission speed between areas
     params.signalV = 20.0
-    params.K_gl = 0.6  # global coupling strength
+     # global coupling strength 
+    params.K_gl = 1.0 # parameter not yet explored or tested
     
     # connectivity
     if Cmat is None:
@@ -59,10 +60,9 @@ def loadDefaultParams(Cmat=None, Dmat=None, seed=None):
     # ------------------------------------------------------------------------
 
     # external input parameters: (pulse density)
-    params.p_ext_static = np.full(shape=(params.N, 1), fill_value=0.22) #baseline external input
-    params.p_ext = np.random.uniform(-0.1, 0.1, (params.N, 1)) #random variation in external input
-    # params.p_ext = np.add(params.p_ext_static, params.p_ext)
-
+    params.ext_input_static = np.full(shape=(params.N, 1), fill_value=0.22) #baseline external input
+    params.ext_input = np.random.uniform(-0.1, 0.1, (params.N, 1)) #random variation in external input
+    
     params.y0_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
     params.y1_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))
     params.y2_init = 0.05 * np.random.uniform(0, 1, (params.N, 1))

@@ -231,12 +231,6 @@ def timeIntegration_njit_elementwise(
     def Sigm(v):
         x = 2.0 * e0 / (1.0 + np.exp(r * (v0 - v)))
         return x
-    
-    # make sure state variables do not fall below 0
-    def preventUndershoot(x): 
-        if x < 0.0:
-            x = 0.0
-        return x
 
     for i in range(startind, startind + len(t)):
         # loop through all the nodes
@@ -287,10 +281,6 @@ def timeIntegration_njit_elementwise(
             y3s[no, i] = y3s[no, i - 1] + dt * y3_rhs
             y4s[no, i] = y4s[no, i - 1] + dt * y4_rhs
             y5s[no, i] = y5s[no, i - 1] + dt * y5_rhs
-
-            y0s[no, i] = preventUndershoot(y0s[no, i])
-            y1s[no, i] = preventUndershoot(y1s[no, i])
-            y2s[no, i] = preventUndershoot(y2s[no, i])
             
             # Ornstein-Uhlenbeck process
             y3_ou[no] = (
